@@ -1,2 +1,24 @@
-# Dataset
+# Data
 dataset/
+data/
+*.npz.bak
+
+# Models
+models/
+*.pth
+*.pt
+
+# Python / Jupyter
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+
+# Secrets
+kaggle.json
+.env
+
+# OS / editors
+.DS_Store
+.vscode/
+.idea/
