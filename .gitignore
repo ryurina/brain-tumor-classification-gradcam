@@ -1,6 +1,7 @@
 # Data
 dataset/
 data/
+draft/
 *.npz.bak
 
 # Models
