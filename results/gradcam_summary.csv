@@ -1,0 +1,16 @@
+modèle,classe vraie,bien classée,n,part CAM hors cerveau (médiane),part image hors cerveau (médiane)
+ResNet18,glioma,False,72,0.146,0.276
+ResNet18,glioma,True,328,0.248,0.512
+ResNet18,meningioma,False,16,0.19,0.501
+ResNet18,meningioma,True,384,0.195,0.446
+ResNet18,notumor,True,400,0.24,0.398
+ResNet18,pituitary,False,3,0.179,0.332
+ResNet18,pituitary,True,397,0.134,0.313
+CNN,glioma,False,122,0.345,0.392
+CNN,glioma,True,278,0.567,0.526
+CNN,meningioma,False,78,0.261,0.37
+CNN,meningioma,True,322,0.346,0.471
+CNN,notumor,False,4,0.307,0.552
+CNN,notumor,True,396,0.371,0.398
+CNN,pituitary,False,8,0.339,0.41
+CNN,pituitary,True,392,0.182,0.311
