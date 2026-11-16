@@ -30,26 +30,23 @@ Enseignements (détails et nuances dans le rapport) :
 ## 3. Grad-CAM en bref
 
 Pour la dernière couche convolutive (cartes d'activation $A^k$ de taille $7\times7$) et une classe $c$ de score $y^c$ (logit) :
-\[
-\alpha_k^c = \frac{1}{Z}
-\sum_{i,j}
-\frac{\partial y^c}{\partial A_{ij}^k}
-\qquad
-\text{avec } Z = 7 \times 7 = 49
-\]
+$$
+\alpha_k^c = \frac{1}{Z} \sum_{i,j} \frac{\partial y^c}{\partial A_{ij}^k}
+$$
 
-\[
-\text{(Importance du canal } k\text{)}
-\]
+avec :
 
-\[
-L^c = \operatorname{ReLU}
-\left(
-\sum_k \alpha_k^c A^k
-\right)
-\qquad
-\text{(Carte d'activation } 7 \times 7\text{)}
-\]
+$$
+Z = 7 \times 7 = 49
+$$
+
+**Importance du canal** \(k\).
+
+$$
+L^c = \operatorname{ReLU}\left(\sum_k \alpha_k^c A^k\right)
+$$
+
+**Carte d'activation :** \(7 \times 7\).
 
 La carte est ensuite agrandie à 224×224 (interpolation bilinéaire) et normalisée dans [0, 1].
 
@@ -148,7 +145,6 @@ python src/predict.py --model resnet18 --image chemin/vers/irm.jpg --cam sortie.
 - Une seule exécution par modèle ; budgets d'entraînement inégaux (10 contre 30 époques, poids pré-entraînés contre aléatoires). Le CNN n'avait pas convergé : son score est une borne basse.
 - Pas d'identifiant de patient ; étiquettes du jeu non auditées ; un seul jeu de données, pas de validation externe.
 - Grad-CAM : cartes 7×7 floues ; la ReLU masque les contributions négatives ; le masque de mesure couvre toute la tête (il distingue le fond, pas le cerveau) ; une carte n'établit pas de causalité.
-- La mesure du cadrage mélange zoom, plan de coupe et effet du seuil d'intensité.
 - Ce travail n'est pas un outil clinique.
 
 ## 10. Références
