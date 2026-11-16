@@ -1,11 +1,6 @@
 # Où regarde un CNN qui classe des IRM cérébrales ? Interprétation par Grad-CAM
 
-Projet final du cours *Réseaux de neurones : vision par ordinateur* (Master 2 Mathématiques appliquées, Université d'Antananarivo).
 Comparaison d'un CNN entraîné de zéro et d'un ResNet18 pré-entraîné sur le jeu *Brain Tumor MRI*, avec **Grad-CAM** pour interpréter leurs décisions, en particulier leurs erreurs.
-
-> **Avertissement** : étude académique. Ce n'est pas un outil de diagnostic médical et il ne doit pas être utilisé pour décider d'une prise en charge.
-
-Rapport complet (IMRaD, 12 pages) : [`report/rapport_final.pdf`](report/rapport_final.pdf) — sources LaTeX dans [`report/`](report/).
 
 ## 1. Objectifs
 
@@ -31,18 +26,30 @@ Enseignements (détails et nuances dans le rapport) :
 
 - **77 des 91 erreurs de ResNet18 sont aussi des erreurs du CNN.**
 - **ResNet18 regarde la tête, pas le fond** ; le **CNN s'appuie davantage sur le fond**, surtout pour les gliomes.
-- **Le cadrage des images (zoom, plan de coupe) dépend de la classe** et suffit seul à retrouver la classe avec 41 à 46 % d'exactitude (hasard : 25 %).
-- **Les erreurs se concentrent sur les images au cadrage serré** : 51 des 72 gliomes manqués par ResNet18 sont dans le quart de gliomes dont le fond est le plus petit (51 % d'erreurs contre 6 à 9 % ailleurs).
-- Ces observations sont **corrélationnelles** : elles ne prouvent pas que les modèles utilisent le cadrage.
 
 ## 3. Grad-CAM en bref
 
 Pour la dernière couche convolutive (cartes d'activation $A^k$ de taille $7\times7$) et une classe $c$ de score $y^c$ (logit) :
+\[
+\alpha_k^c = \frac{1}{Z}
+\sum_{i,j}
+\frac{\partial y^c}{\partial A_{ij}^k}
+\qquad
+\text{avec } Z = 7 \times 7 = 49
+\]
 
-```
-alpha_k^c = (1/Z) * somme_{i,j} d y^c / d A^k_{ij}        avec Z = 7 x 7 = 49   (importance du canal k)
-L^c       = ReLU( somme_k alpha_k^c * A^k )                                    (carte 7 x 7)
-```
+\[
+\text{(Importance du canal } k\text{)}
+\]
+
+\[
+L^c = \operatorname{ReLU}
+\left(
+\sum_k \alpha_k^c A^k
+\right)
+\qquad
+\text{(Carte d'activation } 7 \times 7\text{)}
+\]
 
 La carte est ensuite agrandie à 224×224 (interpolation bilinéaire) et normalisée dans [0, 1].
 
@@ -50,15 +57,13 @@ La carte est ensuite agrandie à 224×224 (interpolation bilinéaire) et normali
 - La **ReLU** ne garde que ce qui *soutient* la classe : une zone « froide » peut être sans effet **ou** pousser contre la classe. La carte **signée** (sans ReLU) lève cette ambiguïté (rouge : pour, bleu : contre).
 - La carte est **floue** (cases de 32×32 pixels), **normalisée image par image** et **ne prouve pas** la causalité.
 
-Le rapport détaille ces points (section 3) et leur lecture (tableau « ce que la carte indique / n'indique pas »).
 
 ## 4. Données
 
 - **Brain Tumor MRI Dataset** (Masoud Nickparvar, Kaggle) : https://www.kaggle.com/datasets/masoudnickparvar/brain-tumor-mri-dataset
 - Classes : `glioma`, `meningioma`, `notumor`, `pituitary` (dossiers par classe).
 - Copie utilisée : `Training` = 5 600 images, `Testing` = 1 600 images (400 par classe). La version exacte peut différer de celle décrite sur la page Kaggle.
-- `Training` est séparé en entraînement (4 480 images) et validation (1 120 images) par tirage **stratifié** (`random_state=42`). `Testing` n'est utilisé qu'en évaluation finale.
-- Pas d'identifiant de patient : la séparation se fait par image, une fuite entre entraînement et validation est possible (non vérifiée).
+- `Training` est séparé en entraînement (4 480 images) et validation (1 120 images) par tirage **stratifié**. `Testing` n'est utilisé qu'en évaluation finale.
 - **Les données ne sont pas dans ce dépôt.** Téléchargez-les depuis Kaggle et placez-les dans `dataset/Training` et `dataset/Testing`.
 
 ## 5. Méthode (résumé)
@@ -72,7 +77,6 @@ Le rapport détaille ces points (section 3) et leur lecture (tableau « ce que l
 
 - Perte : entropie croisée, lots de 32, sur CPU. Le checkpoint conservé est celui de meilleure exactitude de validation.
 - **Grad-CAM** sur `layer4[-1]` (ResNet18) et `features[-1]` (CNN), classe prédite (ou vraie, avec `--true_class`).
-- **Mesure sur le fond** : un masque du premier plan (seuillage, ouverture, remplissage ; il couvre toute la **tête**, pas seulement le cerveau) donne `off_cam` (part de la carte sur le fond) et `off_area` (part de l'image occupée par le fond, proxy du cadrage).
 
 ## 6. Structure du dépôt
 
@@ -80,44 +84,38 @@ Le rapport détaille ces points (section 3) et leur lecture (tableau « ce que l
 .
 ├── README.md
 ├── requirements.txt
-├── notebooks/                          # la démarche, avec sorties et figures (à lire pour comprendre)
+├── notebooks/
 │   ├── model_resnet18.ipynb            # entraînement, évaluation, logits de ResNet18
 │   ├── model_cnn_scratch.ipynb         # entraînement, évaluation, logits du CNN
-│   └── 07_gradcam_errors.ipynb         # Grad-CAM sur les erreurs, cartes signées, mesure du fond
+│   └── gradcam_errors.ipynb          # Grad-CAM sur les erreurs, cartes signées, mesure du fond
 ├── src/                                # les mêmes étapes en scripts (à lancer pour reproduire / utiliser)
 │   ├── utils.py        # noms des modèles et des fichiers, graines, appareil
-│   ├── dataset.py      # transformations, découpage 80/20 (random_state=42), DataLoaders
-│   ├── model.py        # SmallCNN, ResNet18 à 4 sorties, chargement des checkpoints
+│   ├── dataset.py      # transformations, découpage 80/20 DataLoaders
+│   ├── model.py        # SmallCNN, ResNet18
 │   ├── train.py        # entraînement
 │   ├── evaluate.py     # test : métriques, matrice de confusion, logits, vérification
 │   ├── gradcam.py      # Grad-CAM, groupes d'erreurs, figures, cartes signées, mesure du fond
-│   ├── framing.py      # cadrage des images, entraînement contre test (sans PyTorch)
 │   └── predict.py      # prédiction sur une image (classe, confiance, Grad-CAM)
 ├── results/                            # logits (.npz), tableaux (.csv), figures
 ├── models/                             # checkpoints (.pth), NON versionnés
-├── dataset/                            # données Kaggle, NON versionnées
-└── report/                             # rapport LaTeX (main.tex), figures, rapport_final.pdf
+└── dataset/                            # données Kaggle, NON versionnées
 ```
-
-Les **notebooks** sont la trace des résultats du rapport. Les **scripts** de `src/` reprennent le même code (mêmes transformations, mêmes architectures, mêmes hyperparamètres, même Grad-CAM) pour reproduire et réutiliser, sans notebook.
 
 ## 7. Installation
 
 ```bash
-git clone https://github.com/ryurina/radiography_pulmonaires_cnn.git
-cd radiography_pulmonaires_cnn
-python -m venv .venv && source .venv/bin/activate     # Windows : .venv\Scripts\activate
+git clone https://github.com/ryurina/brain-tumor-classification-gradcam.git
+cd brain-tumor-classification-gradcam
+python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
-
-Un GPU n'est pas nécessaire : les résultats ont été obtenus sur CPU. Versions utilisées : Python **À COMPLÉTER**, PyTorch **À COMPLÉTER**, torchvision **À COMPLÉTER**.
 
 ## 8. Reproduire les résultats
 
 Placer les données dans `dataset/Training` et `dataset/Testing`.
 
 ### A. Avec les notebooks (pour comprendre)
-Lancer, depuis `notebooks/`, dans cet ordre : `model_resnet18.ipynb`, `model_cnn_scratch.ipynb`, `07_gradcam_errors.ipynb`.
+Lancer, depuis `notebooks/`, dans cet ordre : `model_resnet18.ipynb`, `model_cnn_scratch.ipynb`, `gradcam_errors.ipynb`.
 
 ### B. Avec les scripts (pour reproduire ou utiliser), depuis la racine du dépôt
 
@@ -141,21 +139,9 @@ python src/gradcam.py summary                                                   
 # 4. Cadrage : entraînement contre test, par classe
 python src/framing.py
 
-# 5. Prédire sur une image (projet académique, pas un outil de diagnostic)
+# 5. Prédire sur une image
 python src/predict.py --model resnet18 --image chemin/vers/irm.jpg --cam sortie.png
 ```
-
-Sous Windows, ajouter `--num_workers 0` si le chargement des données signale une erreur de multiprocessing.
-
-### Vérifier la reproductibilité sans réentraîner
-- Avec les checkpoints du rapport, `python src/evaluate.py --model resnet18` doit afficher une exactitude test de **0,9431**, et `--model cnn` de **0,8675**.
-- `python src/evaluate.py --model resnet18 --compare_logits results/logits_resnet18.npz` recalcule les logits et les compare à ceux du rapport (`=> REPRODUIT` si l'écart est inférieur à 1e-3).
-- `python src/gradcam.py summary` se recalcule à partir des CSV `results/gradcam_stats_*.csv`, sans checkpoint.
-
-### Ce qui n'est pas reproductible à l'identique
-- Les **graines de PyTorch n'étaient pas fixées** pour les résultats du rapport : `train.py --seed 42` (par défaut) rend l'entraînement plus reproductible, mais ses scores seront proches, pas identiques, à ceux du rapport (la validation du CNN varie de ±3 points d'une époque à l'autre).
-- `train.py` **refuse d'écraser** un checkpoint existant (`--overwrite` pour le remplacer, `--tag NOM` pour un nouvel essai) afin de protéger les checkpoints des résultats du rapport.
-- Compiler le rapport : `cd report && pdflatex main && bibtex main && pdflatex main && pdflatex main`.
 
 ## 9. Limites
 
@@ -168,12 +154,7 @@ Sous Windows, ajouter `--num_workers 0` si le chargement des données signale un
 ## 10. Références
 
 - M. Nickparvar, *Brain Tumor MRI Dataset*, Kaggle (lien en section 4).
-- K. He et al., *Deep Residual Learning for Image Recognition*, CVPR 2016.
-- B. Zhou et al., *Learning Deep Features for Discriminative Localization* (CAM), CVPR 2016.
 - R. R. Selvaraju et al., *Grad-CAM: Visual Explanations from Deep Networks via Gradient-Based Localization*, ICCV 2017.
-- J. Adebayo et al., *Sanity Checks for Saliency Maps*, NeurIPS 2018.
-- R. Geirhos et al., *Shortcut Learning in Deep Neural Networks*, Nature Machine Intelligence 2020.
-- S. Ioffe, C. Szegedy, *Batch Normalization*, ICML 2015 ; D. Kingma, J. Ba, *Adam*, ICLR 2015 ; A. Paszke et al., *PyTorch*, NeurIPS 2019.
 
 ## 11. Auteur
 
