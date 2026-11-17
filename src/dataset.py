@@ -1,10 +1,3 @@
-"""Chargement des données : transformations, découpage entraînement/validation, DataLoaders.
-
-Reprend à l'identique les cellules de chargement des notebooks :
-- dataset/Training est séparé en entraînement (80 %) et validation (20 %), stratifié, random_state=42 ;
-- dataset/Testing est utilisé uniquement pour le test ;
-- l'augmentation (rotation de 10 degrés) n'est appliquée qu'à l'entraînement.
-"""
 from pathlib import Path
 
 from sklearn.model_selection import train_test_split

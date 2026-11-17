@@ -1,8 +1,3 @@
-"""Utilitaires communs : graines, appareil, noms des modèles et des fichiers.
-
-Ne dépend de PyTorch que dans les fonctions qui en ont besoin, pour que
-`framing.py` puisse tourner sans PyTorch.
-"""
 import random
 
 import numpy as np

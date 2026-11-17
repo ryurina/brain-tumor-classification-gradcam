@@ -1,4 +1,3 @@
-"""Les deux modèles comparés : un CNN entraîné de zéro et ResNet18 pré-entraîné."""
 import torch
 import torch.nn as nn
 from torchvision.models import resnet18, ResNet18_Weights

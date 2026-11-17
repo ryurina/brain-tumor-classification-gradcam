@@ -1,11 +1,3 @@
-"""Prédiction sur une image : classe, confiance, et carte Grad-CAM (optionnelle).
-
-    python src/predict.py --model resnet18 --image chemin/vers/irm.jpg
-    python src/predict.py --model resnet18 --image irm.jpg --cam sortie.png
-
-AVERTISSEMENT : projet académique, ce n'est PAS un outil de diagnostic médical. Le modèle se trompe,
-parfois avec une confiance supérieure à 0,99. Ne jamais l'utiliser pour décider d'une prise en charge.
-"""
 import argparse
 from pathlib import Path
 

@@ -1,0 +1,5 @@
+classe,off_area (méd.),off_cam ResNet18 (méd.),ResNet18 : % off_cam > off_area,off_cam CNN (méd.),CNN : % off_cam > off_area
+glioma,0.486,0.241,1.25,0.492,55.5
+meningioma,0.45,0.194,0.5,0.339,9.25
+notumor,0.398,0.24,0.0,0.371,36.25
+pituitary,0.313,0.134,0.0,0.184,1.0

@@ -1,15 +1,3 @@
-"""Évaluation d'un modèle sur le test : exactitude, rapport par classe, matrice de confusion, logits.
-
-Exemples (depuis la racine du dépôt) :
-    python src/evaluate.py --model resnet18
-    python src/evaluate.py --model cnn
-    python src/evaluate.py --model resnet18 --compare_logits results/logits_resnet18.npz   # vérification
-    python src/evaluate.py --model resnet18 --save_logits results/logits_resnet18_bis.npz
-
-Résultats attendus avec les checkpoints du rapport : exactitude test 0,9431 (resnet18) et 0,8675 (cnn).
-`--compare_logits` recalcule les logits et les compare à un fichier existant : c'est la preuve que
-l'évaluation est reproductible à partir du checkpoint.
-"""
 import argparse
 import json
 from pathlib import Path

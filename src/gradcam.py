@@ -1,21 +1,3 @@
-"""Grad-CAM : classe GradCAM (celle des notebooks), figures, groupes d'erreurs et mesure sur le fond.
-
-Exemples (depuis la racine du dépôt) :
-    python src/gradcam.py groups                                         # tailles des groupes d'images (à partir des logits)
-    python src/gradcam.py overlay --model resnet18 --group resnet18_glioma_vers_notumor --n 6
-    python src/gradcam.py overlay --model resnet18 --indices 279 376 --true_class      # carte de la VRAIE classe
-    python src/gradcam.py overlay --model resnet18 --indices 279 376 --signed          # carte signée (sans ReLU)
-    python src/gradcam.py stats --model resnet18                         # 1 600 images -> results/gradcam_stats_ResNet18.csv
-    python src/gradcam.py summary                                        # médianes par modèle / classe / bonne ou mauvaise prédiction
-
-Formules : pour une classe c et la dernière couche convolutive (cartes A^k de taille u x v),
-    alpha_k^c = (1 / (u v)) * somme_{i,j} d y^c / d A^k_{ij}        (moyenne spatiale du gradient)
-    carte     = ReLU( somme_k alpha_k^c * A^k )                       (puis normalisée dans [0,1] et agrandie)
-Mesures de `stats` pour chaque image de test :
-    off_cam  = part de la masse de la carte Grad-CAM située sur le fond noir,
-    off_area = part de l'image occupée par le fond (proxy du cadrage).
-Le masque couvre toute la tête (crâne et visage compris), pas seulement le cerveau.
-"""
 import argparse
 from pathlib import Path
 
@@ -23,9 +5,10 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn.functional as F
+from PIL import Image
+from scipy import ndimage
 
 from dataset import IMAGENET_MEAN, IMAGENET_STD, get_loaders
-from framing import brain_mask, load_gray
 from model import build_model, get_target_layer, load_checkpoint
 from utils import MODELS, get_device
 
@@ -96,6 +79,20 @@ def denormalize(x, model_name):
     return np.clip((x * 0.5 + 0.5).squeeze(0).numpy(), 0, 1)
 
 
+def load_gray(path, size=224):
+    """Image brute en niveaux de gris, taille size x size, valeurs dans [0,1]."""
+    return np.asarray(Image.open(path).convert("L").resize((size, size)), dtype=np.float32) / 255.0
+
+
+def brain_mask(img01, thr=0.05):
+    """Masque du premier plan : TÊTE entière (crâne et visage compris), pas seulement le cerveau.
+    Seuil, ouverture morphologique, remplissage des trous. À vérifier visuellement ; ajuster thr si le fond
+    n'est pas parfaitement noir."""
+    m = img01 > thr
+    m = ndimage.binary_opening(m, iterations=2)
+    return ndimage.binary_fill_holes(m)
+
+
 def _softmax(z):
     e = np.exp(z - z.max(axis=1, keepdims=True))
     return e / e.sum(axis=1, keepdims=True)
@@ -162,6 +159,38 @@ def summarize(results_dir):
     out = pd.DataFrame(rows).round(3)
     out.to_csv(Path(results_dir) / "gradcam_summary.csv", index=False)
     print(out.to_string(index=False))
+    report_tables(results_dir)
+
+
+def report_tables(results_dir):
+    """Les deux tableaux du rapport, recalculés depuis results/gradcam_stats_*.csv :
+    (1) bien classées / erreurs par modèle ; (2) par classe vraie."""
+    classes = ["glioma", "meningioma", "notumor", "pituitary"]
+    stats = {m["display"]: pd.read_csv(Path(results_dir) / f"gradcam_stats_{m['display']}.csv") for m in MODELS.values()
+             if (Path(results_dir) / f"gradcam_stats_{m['display']}.csv").exists()}
+    pooled = []
+    for name, d in stats.items():
+        d = d.assign(diff=d["off_cam"] - d["off_area"], ok=d["pred"] == d["y"])
+        for lab, g in [("bien classées", d[d["ok"]]), ("erreurs", d[~d["ok"]])]:
+            pooled.append({"modèle": name, "groupe": lab, "n": len(g), "off_cam (méd.)": g["off_cam"].median(),
+                           "off_area (méd.)": g["off_area"].median(), "diff. médiane": g["diff"].median(),
+                           "% images off_cam > off_area": 100 * (g["diff"] > 0).mean()})
+    pooled = pd.DataFrame(pooled).round(3)
+    pooled.to_csv(Path(results_dir) / "gradcam_pooled.csv", index=False)
+    print("\nPart de la carte sur le fond, bien classées contre erreurs :")
+    print(pooled.to_string(index=False))
+
+    ref = next(iter(stats.values()))
+    by_class = pd.DataFrame({"classe": classes,
+                             "off_area (méd.)": [ref.loc[ref["y"] == k, "off_area"].median() for k in range(4)]})
+    for name, d in stats.items():
+        by_class[f"off_cam {name} (méd.)"] = [d.loc[d["y"] == k, "off_cam"].median() for k in range(4)]
+        by_class[f"{name} : % off_cam > off_area"] = [100 * (d.loc[d["y"] == k, "off_cam"] > d.loc[d["y"] == k, "off_area"]).mean()
+                                                    for k in range(4)]
+    by_class = by_class.round(3)
+    by_class.to_csv(Path(results_dir) / "gradcam_by_class.csv", index=False)
+    print("\nPar classe vraie :")
+    print(by_class.to_string(index=False))
 
 
 def main():

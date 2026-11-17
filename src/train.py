@@ -1,16 +1,3 @@
-"""Entraînement d'un modèle (ResNet18 ou CNN from scratch).
-
-Exemples (depuis la racine du dépôt) :
-    python src/train.py --model resnet18                 # 10 époques, lr 1e-4 (comme le notebook)
-    python src/train.py --model cnn                      # 30 époques, lr 1e-4 (comme le notebook)
-    python src/train.py --model cnn --tag essai2         # écrit models/best_cnn_scratch_essai2.pth
-
-Le checkpoint conservé est celui de meilleure exactitude de validation.
-Sécurité : le script REFUSE d'écraser un checkpoint existant (celui des résultats du rapport)
-sauf avec --overwrite ; utilisez --tag pour un nouvel essai.
-Note : les résultats du rapport ont été obtenus sans fixer les graines PyTorch ; avec --seed 42
-l'entraînement est plus reproductible, mais les scores ne seront pas identiques à ceux du rapport.
-"""
 import argparse
 import json
 import time

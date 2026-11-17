@@ -1,0 +1,5 @@
+modèle,groupe,n,off_cam (méd.),off_area (méd.),diff. médiane,% images off_cam > off_area
+ResNet18,bien classées,1509,0.194,0.422,-0.212,0.066
+ResNet18,erreurs,91,0.157,0.319,-0.126,6.593
+CNN,bien classées,1388,0.322,0.424,-0.085,23.919
+CNN,erreurs,212,0.312,0.375,-0.035,35.849
