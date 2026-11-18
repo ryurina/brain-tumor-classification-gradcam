@@ -21,6 +21,13 @@
 
 ResNet18 fait nettement mieux (écart de 7,6 points, bien au-delà de l'incertitude de ±1 à 2 points). Les deux modèles perdent 4 à 5 points entre validation et test, et le gliome est la classe la plus difficile.
 
+<p align="center">
+  <img src="results/figures/confusion_resnet18.png" width="48%" alt="Matrice de confusion de ResNet18 sur le test"/>
+  <img src="results/figures/confusion_cnn.png" width="48%" alt="Matrice de confusion du CNN sur le test"/>
+</p>
+
+*Matrices de confusion sur le test (lignes : vraie classe). À gauche ResNet18, à droite le CNN.*
+
 ### Ce que montre Grad-CAM
 
 | Mesure (médianes sur les 1 600 images) | ResNet18 | CNN |
@@ -36,6 +43,12 @@ ResNet18 fait nettement mieux (écart de 7,6 points, bien au-delà de l'incertit
 5. **Piège de lecture** : sur la carte *non signée* de la vraie classe, des « points chauds » apparaissent parfois **hors de la tête** (image 243) alors qu'il n'y a aucune preuve positive : la normalisation image par image grossit des valeurs proches de zéro. Il faut lire cette carte avec la carte signée.
 
 Ces observations sont **corrélationnelles** et portent sur peu d'exemples visuels : elles ne prouvent pas que les modèles utilisent le fond ou les bords.
+
+<p align="center">
+  <img src="results/figures/gradcam_comparaison.png" width="80%" alt="Comparaison Grad-CAM ResNet18 / CNN sur des erreurs communes"/>
+</p>
+
+*Mêmes images mal classées par les deux modèles : image, Grad-CAM de ResNet18, Grad-CAM du CNN (carte de la classe prédite ; titre rouge : erreur, avec la confiance entre parenthèses).*
 
 ## 3. Grad-CAM en bref
 
@@ -98,7 +111,7 @@ $$y^c \;=\; b_c + \frac{1}{Z}\sum_{i,j} s^c_{ij}$$
 │   └── predict.py      # prédiction sur une image (classe, confiance, Grad-CAM)
 ├── results/                            # logits (.npz), tableaux (.csv), figures
 ├── models/                             # checkpoints (.pth), NON versionnés
-└──dataset/                            # données Kaggle, NON versionnées
+└── dataset/                            # données Kaggle, NON versionnées
 ```
 
 Les **notebooks** sont la trace des résultats du rapport. Les **scripts** de `src/` reprennent le même code (mêmes transformations, mêmes architectures, mêmes hyperparamètres, même Grad-CAM) pour reproduire et réutiliser, sans notebook.
@@ -146,7 +159,6 @@ python src/predict.py --model resnet18 --image chemin/vers/irm.jpg --cam sortie.
 
 - Une seule exécution par modèle ; 10 contre 30 époques, poids pré-entraînés contre aléatoires. Le CNN n'avait pas convergé : son score est une borne basse.
 - Grad-CAM : cartes 7×7 floues ; la ReLU masque les contributions négatives ; le masque de mesure couvre toute la tête (il distingue le fond, pas le cerveau) ; une carte n'établit pas de causalité.
-- 
 
 ## 10. Références
 
